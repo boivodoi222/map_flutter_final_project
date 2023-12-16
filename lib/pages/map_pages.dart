@@ -17,6 +17,7 @@ class _AppMapState extends State<AppMap> {
             appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
+        // check new text
         title: Text('Flutter Map Tutorial - Kabalidev'),
       ),
       body: SafeArea(
