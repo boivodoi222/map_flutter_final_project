@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'location.dart';
 
-class WebMap extends StatefulWidget {
-  const WebMap({super.key});
+class AppMap extends StatefulWidget {
+  const AppMap({Key? key}) : super(key: key);
 
   @override
-  State<WebMap> createState() => _WebMapState();
+  State<AppMap> createState() => _AppMapState();
 }
 
-class _WebMapState extends State<WebMap> {
+class _AppMapState extends State<AppMap> {
+  late MapController mapController;
+  LatLng defaultLocation = LatLng(21.072204277457637, 105.77392294538035);
+  LatLng? currentLocation;
+  bool showAdditionalLayer = false;
+
+  @override
+  void initState() {
+    super.initState();
+    mapController = MapController();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,20 +31,62 @@ class _WebMapState extends State<WebMap> {
         title: const Text('Map Tutorial'),
       ),
       body: Center(
-        child: FlutterMap(
-          options: const MapOptions(
-            initialCenter: LatLng(21.072204277457637, 105.77392294538035),
-            initialZoom: 16.0,
+        child: Container(
+          child: Column(
+            children: [
+              Flexible(
+                child: FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                    center: defaultLocation,
+                    zoom: 16.0,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      subdomains: const ['a', 'b', 'c'],
+                    ),
+                    if (currentLocation != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: currentLocation!,
+                            child: IconButton(
+                              icon: Icon(Icons.location_on),
+                              color: Colors.red,
+                              iconSize: 30.0,
+                              onPressed: () {
+                                print('Marker tapped!');
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'dev.fleaflet.flutter_map.example',
-              // Plenty of other options available!
-            ),
-          ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          try {
+            Position position = await LocationService.determinePosition();
+            setState(() {
+              currentLocation = LatLng(position.latitude, position.longitude);
+              mapController.move(currentLocation!, 16.0);
+            });
+          } catch (e) {
+            print('Error getting current location: $e');
+          }
+        },
+        tooltip: 'Get Current Location',
+        child: const Icon(Icons.my_location),
       ),
     );
   }
 }
+
+
